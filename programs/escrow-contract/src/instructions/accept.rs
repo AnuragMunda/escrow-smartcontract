@@ -2,6 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, TransferChecked};
 
 use crate::states::escrow::Escrow;
+use crate::utils::errors::EscrowError;
 
 
 /**
@@ -19,6 +20,8 @@ pub fn accept(ctx: Context<Accept>) -> Result<()> {
     let escrow = &mut ctx.accounts.escrow;
     let decimals_a = mint_a.decimals;
     let decimals_b = mint_b.decimals;
+
+    require!(escrow.is_active, EscrowError::NotActive);
 
     // From taker -> initialiser
     let cpi_accounts = TransferChecked {
