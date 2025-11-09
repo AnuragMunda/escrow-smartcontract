@@ -1,7 +1,8 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, TransferChecked};
-// use anchor_spl::token_interface;
+
 use crate::states::escrow::*;
+use crate::utils::events::EscrowInitialised;
 
 /**
  * Function to initialise the escrow
@@ -43,6 +44,12 @@ pub fn initialise(
     let cpi_program = ctx.accounts.token_program.to_account_info();
     let cpi_context = CpiContext::new(cpi_program, cpi_accounts);
     token::transfer_checked(cpi_context, amount_a, decimals)?;
+
+    emit!(EscrowInitialised {
+        initialiser: initialiser.key(),
+        amount_a,
+        amount_b
+    });
 
     Ok(())
 }

@@ -3,7 +3,7 @@ use anchor_spl::token::{self, Mint, Token, TokenAccount, TransferChecked};
 
 use crate::states::escrow::Escrow;
 use crate::utils::errors::EscrowError;
-
+use crate::utils::events::EscrowAccepted;
 
 /**
  * Accept Escrow instruction
@@ -31,25 +31,14 @@ pub fn accept(ctx: Context<Accept>) -> Result<()> {
         authority: ctx.accounts.taker.to_account_info(),
     };
 
-    let cpi_context = CpiContext::new(
-        ctx.accounts.token_program.to_account_info(), 
-        cpi_accounts
-    );
+    let cpi_context = CpiContext::new(ctx.accounts.token_program.to_account_info(), cpi_accounts);
 
-    token::transfer_checked(
-        cpi_context,
-        escrow.amount_b,
-        decimals_b,
-    )?;
+    token::transfer_checked(cpi_context, escrow.amount_b, decimals_b)?;
 
     // From vault -> taker
     let binding = escrow.key();
 
-    let seeds = &[
-        b"escrow".as_ref(),
-        binding.as_ref(),
-        &[escrow.bump],
-    ];
+    let seeds = &[b"escrow".as_ref(), binding.as_ref(), &[escrow.bump]];
 
     let signer = &[&seeds[..]];
 
@@ -61,14 +50,22 @@ pub fn accept(ctx: Context<Accept>) -> Result<()> {
     };
 
     token::transfer_checked(
-            CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), cpi_accounts, signer),
-            escrow.amount_a,
-            decimals_a,
-        )?;
+        CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            cpi_accounts,
+            signer,
+        ),
+        escrow.amount_a,
+        decimals_a,
+    )?;
 
-        escrow.is_active = false;
+    escrow.is_active = false;
 
-        Ok(())
+    emit!(EscrowAccepted {
+        taker: ctx.accounts.taker.key(),
+    });
+
+    Ok(())
 }
 
 #[derive(Accounts)]

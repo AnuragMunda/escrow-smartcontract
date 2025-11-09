@@ -3,6 +3,7 @@ use anchor_spl::token::{self, Mint, Token, TokenAccount, TransferChecked};
 
 use crate::states::escrow::Escrow;
 use crate::utils::errors::EscrowError;
+use crate::utils::events::EscrowCancelled;
 
 /**
  * Escrow Cancel instruction
@@ -35,11 +36,7 @@ pub fn cancel(ctx: Context<Cancel>) -> Result<()> {
 
     let binding = escrow.key();
 
-    let seeds = &[
-        b"escrow".as_ref(),
-        binding.as_ref(),
-        &[escrow.bump],
-    ];
+    let seeds = &[b"escrow".as_ref(), binding.as_ref(), &[escrow.bump]];
 
     let signer = &[&seeds[..]];
 
@@ -53,6 +50,12 @@ pub fn cancel(ctx: Context<Cancel>) -> Result<()> {
     token::transfer_checked(cpi_context, escrow.amount_a, mint_a.decimals)?;
 
     escrow.is_active = false;
+
+    emit!(EscrowCancelled {
+        initialiser: initialiser.key(),
+        escrow_account: escrow.key(),
+    });
+
     Ok(())
 }
 
