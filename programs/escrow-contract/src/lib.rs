@@ -26,4 +26,9 @@ pub mod escrow_contract {
     ) -> Result<()> {
         accept(ctx)
     }
+    pub fn cancel_escrow(
+        ctx: Context<Cancel>,
+    ) -> Result<()> {
+        cancel(ctx)
+    }
 }

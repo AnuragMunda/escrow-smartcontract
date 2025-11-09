@@ -4,4 +4,6 @@ use anchor_lang::prelude::*;
 pub enum EscrowError {
     #[msg("Escrow account is not active")]
     NotActive,
+    #[msg("Unauthorized access")]
+    Unauthorized,
 }
